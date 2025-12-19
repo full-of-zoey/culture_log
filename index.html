@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Culture Log</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" as="style" crossorigin
+        href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+    <!-- Icon library (Phosphor Icons for clean look) -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+</head>
+
+<body>
+    <div class="app-container">
+        <!-- Header & Stats -->
+        <header>
+            <div class="top-bar">
+                <h1 id="appTitle">Full of Zoey</h1>
+                <button id="authBtn" class="text-btn">Login</button>
+            </div>
+
+            <p class="subtitle">보고, 듣고, 경험한 것들의 목록</p>
+
+            <div class="stats-dashboard">
+                <div class="stat-item">
+                    <span class="stat-value" id="statTotal">0</span>
+                    <span class="stat-label">전체 관람</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-value" id="statAvg">0.0</span>
+                    <span class="stat-label">평균 평점</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-value" id="statGenre">-</span>
+                    <span class="stat-label">가장 많이 본</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-value" id="statYear">0</span>
+                    <span class="stat-label">올해</span>
+                </div>
+            </div>
+
+            <div class="view-controls">
+                <div class="toggle-group">
+                    <button class="toggle-btn active" data-view="list">
+                        <i class="ph ph-list-dashes"></i> 목록
+                    </button>
+                    <button class="toggle-btn" data-view="gallery">
+                        <i class="ph ph-squares-four"></i> 갤러리
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main id="contentArea" class="view-list">
+            <!-- Items will be injected here via JS -->
+            <div class="empty-state">
+                <p>아직 기록된 문화생활이 없습니다.</p>
+            </div>
+        </main>
+
+        <!-- Floating Action Button (Only visible if admin) -->
+        <button id="addBtn" class="fab hidden">
+            <i class="ph ph-plus"></i>
+        </button>
+    </div>
+
+    <!-- Modals -->
+    <!-- 1. Login Modal -->
+    <div id="loginModal" class="modal hidden">
+        <div class="modal-content small">
+            <h3>관리자 모드</h3>
+            <input type="password" id="adminPassword" placeholder="비밀번호 입력">
+            <div class="modal-actions">
+                <button id="cancelLogin" class="btn secondary">취소</button>
+                <button id="confirmLogin" class="btn primary">확인</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. Write/Edit Modal -->
+    <div id="writeModal" class="modal hidden">
+        <div class="modal-content">
+            <h3>새로운 기록</h3>
+
+            <!-- Image Upload Simulation -->
+            <div class="file-upload-area" id="dropZone">
+                <i class="ph ph-camera"></i>
+                <p>이미지 업로드 또는 붙여넣기<br><span class="sub-text">(자동 분석 시뮬레이션)</span></p>
+                <input type="file" id="imageInput" accept="image/*" hidden>
+            </div>
+
+            <form id="recordForm">
+                <div class="form-group">
+                    <label>제목</label>
+                    <input type="text" id="inputTitle" required placeholder="공연/전시 제목">
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>날짜</label>
+                        <input type="date" id="inputDate" required>
+                    </div>
+                    <div class="form-group">
+                        <label>카테고리</label>
+                        <select id="inputCategory">
+                            <option value="classic">클래식</option>
+                            <option value="musical">뮤지컬</option>
+                            <option value="play">연극</option>
+                            <option value="exhibition">전시</option>
+                            <option value="movie">영화</option>
+                            <option value="concert">콘서트</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>출연/아티스트</label>
+                    <input type="text" id="inputCast" placeholder="지휘자, 연주자, 배우 등">
+                </div>
+                <div class="form-group">
+                    <label>프로그램/작품명</label>
+                    <input type="text" id="inputProgram" placeholder="예: 베토벤 교향곡 9번, 캣츠">
+                </div>
+                <div class="form-group">
+                    <label>평점</label>
+                    <div class="rating-input">
+                        <input type="range" id="inputRating" min="1" max="5" step="0.5" value="5">
+                        <span id="ratingValue">5.0</span>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>장소</label>
+                    <input type="text" id="inputVenue" placeholder="장소 입력">
+                </div>
+                <div class="form-group">
+                    <label>한줄평</label>
+                    <textarea id="inputReview" rows="3" placeholder="짧은 감상을 남겨주세요"></textarea>
+                </div>
+
+                <div class="modal-actions">
+                    <button type="button" id="closeWrite" class="btn secondary">취소</button>
+                    <button type="submit" class="btn primary">저장하기</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 3. Detail Modal -->
+    <div id="detailModal" class="modal hidden">
+        <div class="modal-content large">
+            <div class="modal-controls">
+                <button id="headerDeleteBtn" class="icon-btn danger hidden"><i class="ph ph-trash"></i></button>
+                <button id="closeDetail" class="icon-btn"><i class="ph ph-x"></i></button>
+            </div>
+            <div class="detail-container">
+                <div class="detail-poster">
+                    <img id="detailImage" src="" alt="Poster">
+                </div>
+                <div class="detail-info">
+                    <span id="detailCategory" class="badge">Category</span>
+                    <h2 id="detailTitle">Title</h2>
+                    <p id="detailDate" class="detail-date">2024.01.01</p>
+
+                    <div class="info-row">
+                        <span class="label">장소</span>
+                        <span id="detailVenue">Venue</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="label">출연</span>
+                        <span id="detailCast">-</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="label">프로그램</span>
+                        <span id="detailProgram">-</span>
+                    </div>
+
+                    <div class="detail-rating" id="detailRating">★ 5.0</div>
+
+                    <div class="detail-review-box">
+                        <p id="detailReview">Review content...</p>
+                    </div>
+
+                    <div class="detail-actions"
+                        style="margin-top:auto; display:flex; gap:0.5rem; justify-content:flex-end; width:100%;">
+                        <button id="closeDetailBottom" class="btn secondary">닫기</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="data_analysis.js"></script>
+    <script src="app.js"></script>
+</body>
+
+</html>
