@@ -255,8 +255,15 @@ function showDetail(record) {
     document.getElementById('detailRating').textContent = `★ ${record.rating}`;
     document.getElementById('detailReview').textContent = record.review;
 
+    // Debug Log
+    console.log("Checking Admin Privileges:", {
+        currentUser: user ? user.email : "No User",
+        adminEmail: ADMIN_EMAIL,
+        match: user && user.email === ADMIN_EMAIL
+    });
+
     // Only show delete if user is logged in AND is admin
-    if (user && user.email === ADMIN_EMAIL) {
+    if (user && user.email.toLowerCase() === ADMIN_EMAIL.toLowerCase()) {
         headerDeleteBtn.classList.remove('hidden');
     } else {
         headerDeleteBtn.classList.add('hidden');
