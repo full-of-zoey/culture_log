@@ -58,6 +58,7 @@ const toggleBtns = document.querySelectorAll('.toggle-btn');
 let user = null; // Current logged in user
 let records = []; // Synced from Firestore
 let currentView = 'list'; // list or gallery
+const ADMIN_EMAIL = "honggiina@gmail.com";
 
 // --- Initialization ---
 function init() {
@@ -66,8 +67,9 @@ function init() {
         user = currentUser;
         updateAuthUI();
         // Reload detail view permissions if open
+        const isAdmin = user && user.email === ADMIN_EMAIL;
         if (!detailModal.classList.contains('hidden')) {
-            if (user) headerDeleteBtn.classList.remove('hidden');
+            if (isAdmin) headerDeleteBtn.classList.remove('hidden');
             else headerDeleteBtn.classList.add('hidden');
         }
     });
@@ -95,8 +97,12 @@ authBtn.addEventListener('click', () => {
         // Login with Google
         signInWithPopup(auth, provider)
             .then((result) => {
-                // Successful login
-                console.log("Logged in as:", result.user.email);
+                const loggedInEmail = result.user.email;
+                if (loggedInEmail !== ADMIN_EMAIL) {
+                    alert(`안녕하세요, ${result.user.displayName}님! 👋\n\n이곳은 저(Zoey)의 개인적인 문화 기록 공간입니다.\n기록 작성과 삭제는 주인장만 가능하지만,\n편안하게 구경하고 즐기다 가세요! 😊`);
+                } else {
+                    alert(`어서오세요, 주인님! 👸\n오늘도 멋진 기록을 남겨보세요.`);
+                }
             }).catch((error) => {
                 console.error("Login failed", error);
                 alert("로그인 실패: " + error.message);
@@ -107,7 +113,11 @@ authBtn.addEventListener('click', () => {
 function updateAuthUI() {
     if (user) {
         authBtn.textContent = 'Logout';
-        addBtn.classList.remove('hidden');
+        if (user.email === ADMIN_EMAIL) {
+            addBtn.classList.remove('hidden');
+        } else {
+            addBtn.classList.add('hidden');
+        }
     } else {
         authBtn.textContent = 'Login';
         addBtn.classList.add('hidden');
@@ -245,9 +255,8 @@ function showDetail(record) {
     document.getElementById('detailRating').textContent = `★ ${record.rating}`;
     document.getElementById('detailReview').textContent = record.review;
 
-    // Only show delete if user is logged in
-    // (In real app, check if user.uid === record.userId or admin claim)
-    if (user) {
+    // Only show delete if user is logged in AND is admin
+    if (user && user.email === ADMIN_EMAIL) {
         headerDeleteBtn.classList.remove('hidden');
     } else {
         headerDeleteBtn.classList.add('hidden');
@@ -257,7 +266,7 @@ function showDetail(record) {
 }
 
 headerDeleteBtn.addEventListener('click', async () => {
-    if (!user) return;
+    if (!user || user.email !== ADMIN_EMAIL) return;
 
     if (confirm('정말 삭제하시겠습니까? (복구할 수 없습니다)')) {
         try {
