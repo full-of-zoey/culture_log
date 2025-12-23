@@ -856,9 +856,9 @@ function renderRecords() {
                 </div>
                 <div class="item-meta">
                     <span class="item-category">${formatCategory(record.category)}</span>
-                    ${record.cast ? `<span class="item-cast"> | ${record.cast}</span>` : ''}
-                    <span class="item-venue">${record.venue ? ` | ${record.venue}` : ''}</span>
-                    <span class="star-rating">★ ${record.rating}</span>
+                    ${record.cast ? `<span class="sep">|</span><span class="item-cast">${record.cast}</span>` : ''}
+                    ${record.venue ? `<span class="sep">|</span><span class="item-venue">${record.venue}</span>` : ''}
+                    <span class="sep">|</span><span class="star-rating">★ ${record.rating}</span>
                 </div>
                 ${record.program ? `<div class="item-program text-truncate" style="font-size:0.9rem; color:#555; margin-bottom:0.5rem; cursor:pointer;">${categoryEmoji} ${formatText(record.program)}</div>` : ''}
                 <div class="item-review">${formatText(record.review)}</div>
