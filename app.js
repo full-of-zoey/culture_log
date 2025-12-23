@@ -537,8 +537,8 @@ nextPageBtn.addEventListener('click', () => {
     if (currentCategory !== 'all') {
         filtered = records.filter(r => r.category === currentCategory);
     }
-    const dynamicItemsPerPage = currentView === 'gallery' ? 9 : 10;
-    const totalPages = Math.ceil(filtered.length / dynamicItemsPerPage) || 1;
+    const ITEMS_PER_PAGE = 9; // Constant
+    const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE) || 1;
 
     if (currentPage < totalPages) {
         currentPage++;
@@ -828,29 +828,33 @@ function renderRecords() {
     }
 
     // 2. Pagination State
-    // Dynamic Items Per Page: 9 for Gallery (3x3), 10 for List
-    const dynamicItemsPerPage = currentView === 'gallery' ? 9 : 10;
+    // User requested 9 items for both views
+    const ITEMS_PER_PAGE = 9;
 
     const totalItems = filteredRecords.length;
-    const totalPages = Math.ceil(totalItems / dynamicItemsPerPage) || 1;
+    const totalPages = Math.ceil(totalItems / ITEMS_PER_PAGE) || 1;
 
     // Safety check
     if (currentPage > totalPages) currentPage = totalPages;
     if (currentPage < 1) currentPage = 1;
 
     // 3. Slice
-    const startIndex = (currentPage - 1) * dynamicItemsPerPage;
-    const endIndex = startIndex + dynamicItemsPerPage;
+    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+    const endIndex = startIndex + ITEMS_PER_PAGE;
     const pageItems = filteredRecords.slice(startIndex, endIndex);
 
-    // 4. Empty Check
+    // 4. Empty Check & Controls Visibility
     if (totalItems === 0) {
-        emptyState.classList.remove('hidden');
-        paginationControls.classList.add('hidden');
-        return; // Stop here if empty
+        if (emptyState) emptyState.classList.remove('hidden');
+        if (paginationControls) paginationControls.classList.add('hidden');
+        return;
     } else {
-        emptyState.classList.add('hidden');
-        paginationControls.classList.remove('hidden');
+        if (emptyState) emptyState.classList.add('hidden');
+        // ALWAYS show controls if data exists
+        if (paginationControls) {
+            paginationControls.classList.remove('hidden');
+            paginationControls.style.display = 'flex'; // Force display
+        }
     }
 
     // 5. Render Items
