@@ -37,7 +37,6 @@ const cancelLoginBtn = document.getElementById('cancelLogin');
 const closeWriteBtn = document.getElementById('closeWrite');
 const closeDetailBtn = document.getElementById('closeDetail');
 const closeDetailBottomBtn = document.getElementById('closeDetailBottom');
-const headerDeleteBtn = document.getElementById('headerDeleteBtn');
 
 // Form
 const recordForm = document.getElementById('recordForm');
@@ -281,6 +280,10 @@ closeDetailBottomBtn.addEventListener('click', () => {
 
 let currentDetailId = null;
 
+// headerDeleteBtn is dynamic now
+
+// ... (previous code) ...
+
 function showDetail(record) {
     currentDetailId = record.id;
     document.getElementById('detailImage').src = record.imageUrl;
@@ -293,37 +296,48 @@ function showDetail(record) {
     document.getElementById('detailRating').textContent = `★ ${record.rating}`;
     document.getElementById('detailReview').textContent = record.review;
 
-    // Debug Log
-    console.log("Checking Admin Privileges:", {
-        currentUser: user ? user.email : "No User",
-        adminEmail: ADMIN_EMAIL,
-        match: user && user.email === ADMIN_EMAIL
-    });
+    // --- Dynamic Delete Button Logic ---
+    const controlsContainer = document.querySelector('.modal-controls');
+    const existingDeleteBtn = document.getElementById('dynamicDeleteBtn');
 
-    // Only show delete if user is logged in AND is admin
-    if (user && user.email.toLowerCase() === ADMIN_EMAIL.toLowerCase()) {
-        headerDeleteBtn.classList.remove('hidden');
-    } else {
-        headerDeleteBtn.classList.add('hidden');
+    // 1. Check Admin
+    const isAdmin = user && user.email.toLowerCase() === ADMIN_EMAIL.toLowerCase();
+
+    // 2. Clear existing (always fresh state)
+    if (existingDeleteBtn) {
+        existingDeleteBtn.remove();
+    }
+
+    // 3. If Admin, Create & Append
+    if (isAdmin) {
+        const btn = document.createElement('button');
+        btn.id = 'dynamicDeleteBtn';
+        btn.className = 'icon-btn danger';
+        btn.innerHTML = '<i class="ph ph-trash"></i>';
+
+        // Add Listener
+        btn.addEventListener('click', async () => {
+            if (confirm('정말 삭제하시겠습니까? (복구할 수 없습니다)')) {
+                try {
+                    await deleteDoc(doc(db, "records", currentDetailId));
+                    detailModal.classList.add('hidden');
+                } catch (error) {
+                    console.error("Error removing document: ", error);
+                    alert("삭제 실패: " + error.message);
+                }
+            }
+        });
+
+        // Insert before Close button
+        const closeBtn = document.getElementById('closeDetail');
+        controlsContainer.insertBefore(btn, closeBtn);
     }
 
     detailModal.classList.remove('hidden');
 }
 
-headerDeleteBtn.addEventListener('click', async () => {
-    if (!user || user.email !== ADMIN_EMAIL) return;
+// Removed static headerDeleteBtn listener
 
-    if (confirm('정말 삭제하시겠습니까? (복구할 수 없습니다)')) {
-        try {
-            await deleteDoc(doc(db, "records", currentDetailId));
-            detailModal.classList.add('hidden');
-            // No need to call renderRecords(), onSnapshot will trigger automatically!
-        } catch (error) {
-            console.error("Error removing document: ", error);
-            alert("삭제 실패: " + error.message);
-        }
-    }
-});
 
 // --- Render Logic ---
 function renderRecords() {
