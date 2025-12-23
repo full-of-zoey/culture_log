@@ -493,6 +493,8 @@ function updateAuthUI() {
     }
 }
 
+const mainElement = document.querySelector('main'); // New reference
+
 // --- View Toggle Logic ---
 toggleBtns.forEach(btn => {
     btn.addEventListener('click', () => {
@@ -500,8 +502,8 @@ toggleBtns.forEach(btn => {
         currentView = view;
         toggleBtns.forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
-        contentArea.className = `view-${view}`;
-        currentPage = 1; // Reset page on view change? Maybe optional.
+        mainElement.className = `view-${view}`; // Apply class to main wrapper
+        currentPage = 1;
         renderRecords();
     });
 });
