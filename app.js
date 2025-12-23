@@ -523,29 +523,8 @@ filterChips.forEach(chip => {
 });
 
 // --- Pagination Logic ---
-prevPageBtn.addEventListener('click', () => {
-    if (currentPage > 1) {
-        currentPage--;
-        renderRecords();
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-});
-
-nextPageBtn.addEventListener('click', () => {
-    // Recalculate Total Pages for safety
-    let filtered = records;
-    if (currentCategory !== 'all') {
-        filtered = records.filter(r => r.category === currentCategory);
-    }
-    const ITEMS_PER_PAGE = 9; // Constant
-    const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE) || 1;
-
-    if (currentPage < totalPages) {
-        currentPage++;
-        renderRecords();
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-});
+// Handled dynamically in renderPagination
+// prevPageBtn and nextPageBtn are no longer static elements
 
 // --- Import Logic ---
 const importBtn = document.getElementById('importBtn');
