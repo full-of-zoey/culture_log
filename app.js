@@ -1,8 +1,3 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-import { getFirestore, collection, addDoc, deleteDoc, doc, onSnapshot, query, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
-
 // --- Configuration ---
 const firebaseConfig = {
     apiKey: "AIzaSyCfUbKtJ1FjrJpz23NVl7eHwkGKEOltZ_M",
@@ -14,12 +9,12 @@ const firebaseConfig = {
     measurementId: "G-ZZ8G837F8G"
 };
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
-const storage = getStorage(app);
-const provider = new GoogleAuthProvider();
+// Initialize Firebase (Compat)
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.firestore();
+const storage = firebase.storage();
+const provider = new firebase.auth.GoogleAuthProvider();
 
 // --- DOM Elements ---
 const appContainer = document.querySelector('.app-container');
@@ -428,7 +423,7 @@ const ADMIN_EMAIL = "honggiina@gmail.com";
 // --- Initialization ---
 function init() {
     // Auth Listener
-    onAuthStateChanged(auth, (currentUser) => {
+    auth.onAuthStateChanged((currentUser) => {
         user = currentUser;
         updateAuthUI();
         // Reload detail view permissions if open
@@ -440,27 +435,27 @@ function init() {
     });
 
     // Data Listener (Realtime!)
-    const q = query(collection(db, "records"), orderBy("date", "desc"));
-    onSnapshot(q, (snapshot) => {
-        records = snapshot.docs.map(doc => ({
-            id: doc.id,
-            ...doc.data()
-        }));
-        renderRecords();
-        updateStats();
-    });
+    db.collection("records").orderBy("date", "desc")
+        .onSnapshot((snapshot) => {
+            records = snapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data()
+            }));
+            renderRecords();
+            updateStats();
+        });
 }
 
 // --- Auth Logic ---
 authBtn.addEventListener('click', () => {
     if (user) {
         // Logout
-        signOut(auth).then(() => {
+        auth.signOut().then(() => {
             alert('로그아웃 되었습니다.');
         });
     } else {
         // Login with Google
-        signInWithPopup(auth, provider)
+        auth.signInWithPopup(provider)
             .then((result) => {
                 const loggedInEmail = result.user.email;
                 if (loggedInEmail !== ADMIN_EMAIL) {
@@ -478,7 +473,7 @@ authBtn.addEventListener('click', () => {
 function updateAuthUI() {
     const importBtn = document.getElementById('importBtn');
     if (user) {
-        authBtn.textContent = 'Logout';
+        authBtn.textContent = '편집';
         if (user.email === ADMIN_EMAIL) {
             addBtn.classList.remove('hidden');
             if (importBtn) importBtn.classList.remove('hidden');
@@ -643,16 +638,11 @@ recordForm.addEventListener('submit', async (e) => {
     try {
         let imageUrl = `https://source.unsplash.com/random/300x450/?${document.getElementById('inputCategory').value},concert`;
 
-        // If editing and no new file selected, replace with existing URL (handled later or check selectedFile)
-        // Actually, if selectedFile is null during edit, we should keep old image.
-        // But here we rely on selectedFile check.
-
         if (selectedFile) {
-            const storageRef = ref(storage, 'posters/' + Date.now() + '_' + selectedFile.name);
-            const snapshot = await uploadBytes(storageRef, selectedFile);
-            imageUrl = await getDownloadURL(snapshot.ref);
+            const storageRef = storage.ref('posters/' + Date.now() + '_' + selectedFile.name);
+            const snapshot = await storageRef.put(selectedFile);
+            imageUrl = await snapshot.ref.getDownloadURL();
         } else if (isEditing) {
-            // Keep existing image if not replacing
             const oldRecord = records.find(r => r.id === editingId);
             if (oldRecord) imageUrl = oldRecord.imageUrl;
         }
@@ -666,22 +656,16 @@ recordForm.addEventListener('submit', async (e) => {
             rating: parseFloat(document.getElementById('inputRating').value),
             venue: document.getElementById('inputVenue').value,
             review: document.getElementById('inputReview').value,
-            imageUrl: imageUrl,
-            // userId: user.uid // Maintain original owner
+            imageUrl: imageUrl
         };
 
         if (isEditing && editingId) {
-            // UPDATE
-            await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js")
-                .then(({ updateDoc, doc }) => {
-                    return updateDoc(doc(db, "records", editingId), dataPayload);
-                });
+            await db.collection("records").doc(editingId).update(dataPayload);
             alert("수정되었습니다.");
         } else {
-            // CREATE
-            dataPayload.createdAt = serverTimestamp();
+            dataPayload.createdAt = firebase.firestore.FieldValue.serverTimestamp();
             dataPayload.userId = user.uid;
-            await addDoc(collection(db, "records"), dataPayload);
+            await db.collection("records").add(dataPayload);
         }
 
         // Cleanup
@@ -696,6 +680,8 @@ recordForm.addEventListener('submit', async (e) => {
         submitBtn.textContent = "저장하기";
     }
 });
+
+
 
 function resetForm() {
     recordForm.reset();
@@ -775,7 +761,7 @@ function showDetail(record) {
         delBtn.addEventListener('click', async () => {
             if (confirm('정말 삭제하시겠습니까? (복구할 수 없습니다)')) {
                 try {
-                    await deleteDoc(doc(db, "records", currentDetailId));
+                    await db.collection("records").doc(currentDetailId).delete();
                     detailModal.classList.add('hidden');
                 } catch (error) {
                     console.error("Error removing document: ", error);
@@ -856,9 +842,9 @@ function renderRecords() {
                 </div>
                 <div class="item-meta">
                     <span class="item-category">${formatCategory(record.category)}</span>
-                    ${record.cast ? `<span class="sep">|</span><span class="item-cast">${record.cast}</span>` : ''}
-                    ${record.venue ? `<span class="sep">|</span><span class="item-venue">${record.venue}</span>` : ''}
-                    <span class="sep">|</span><span class="star-rating">★ ${record.rating}</span>
+                    ${record.cast ? `<span class="item-cast">${record.cast}</span>` : ''}
+                    ${record.venue ? `<span class="item-venue">${record.venue}</span>` : ''}
+                    <span class="star-rating">★ ${record.rating}</span>
                 </div>
                 ${record.program ? `<div class="item-program text-truncate" style="font-size:0.9rem; color:#555; margin-bottom:0.5rem; cursor:pointer;">${categoryEmoji} ${formatText(record.program)}</div>` : ''}
                 <div class="item-review">${formatText(record.review)}</div>
@@ -896,17 +882,47 @@ function renderRecords() {
     });
 
     // 6. Update Controls Logic
-    updatePaginationControls(currentPage, totalPages);
+    renderPagination(currentPage, totalPages);
 }
 
-function updatePaginationControls(current, total) {
-    const prevBtn = document.getElementById('prevPageBtn');
-    const nextBtn = document.getElementById('nextPageBtn');
-    const indicator = document.getElementById('pageIndicator');
+function renderPagination(current, total) {
+    if (!paginationControls) return;
+    paginationControls.innerHTML = '';
 
-    if (prevBtn) prevBtn.disabled = (current <= 1);
-    if (nextBtn) nextBtn.disabled = (current >= total);
-    if (indicator) indicator.textContent = `${current} / ${total}`;
+    if (total <= 1) {
+        paginationControls.classList.add('hidden');
+        return;
+    }
+    paginationControls.classList.remove('hidden');
+
+    // Prev Button
+    const prevBtn = document.createElement('button');
+    prevBtn.className = 'page-btn';
+    prevBtn.innerHTML = '<i class="ph ph-caret-left"></i>';
+    prevBtn.disabled = (current === 1);
+    prevBtn.onclick = () => { currentPage--; renderRecords(); window.scrollTo(0, 0); };
+    paginationControls.appendChild(prevBtn);
+
+    // Page Numbers
+    for (let i = 1; i <= total; i++) {
+        const btn = document.createElement('button');
+        btn.className = `page-btn ${i === current ? 'active' : ''}`;
+        btn.textContent = i;
+        btn.onclick = () => {
+            currentPage = i;
+            renderRecords();
+            window.scrollTo(0, 0);
+        };
+        paginationControls.appendChild(btn);
+    }
+
+    // Next Button
+    const nextBtn = document.createElement('button');
+    nextBtn.className = 'page-btn';
+    nextBtn.innerHTML = '<i class="ph ph-caret-right"></i>';
+    nextBtn.disabled = (current === total);
+    nextBtn.onclick = () => { currentPage++; renderRecords(); window.scrollTo(0, 0); };
+    paginationControls.appendChild(nextBtn);
 }
 
 // --- Stats Logic ---
@@ -926,13 +942,9 @@ function updateStats() {
     const totalRating = records.reduce((acc, cur) => acc + cur.rating, 0);
     statAvg.textContent = (totalRating / records.length).toFixed(1);
 
-    // 3. Top Genre
-    const counts = {};
-    records.forEach(r => {
-        counts[r.category] = (counts[r.category] || 0) + 1;
-    });
-    const topGenre = Object.keys(counts).reduce((a, b) => counts[a] > counts[b] ? a : b);
-    statGenre.textContent = formatCategory(topGenre);
+    // 3. Genre Count
+    const uniqueGenres = new Set(records.map(r => r.category)).size;
+    statGenre.textContent = uniqueGenres;
 
     // 4. This Year
     const thisYear = new Date().getFullYear();
