@@ -743,7 +743,8 @@ function showDetail(record) {
     document.getElementById('detailDate').textContent = formatDate(record.date);
     document.getElementById('detailVenue').textContent = record.venue || '-';
     document.getElementById('detailCast').textContent = record.cast || '-';
-    document.getElementById('detailProgram').textContent = record.program || '-';
+    const formatText = (text) => text ? text.replace(/\\n/g, '<br>').replace(/\n/g, '<br>') : '-';
+    document.getElementById('detailProgram').innerHTML = formatText(record.program);
     document.getElementById('detailRating').textContent = `★ ${record.rating}`;
     document.getElementById('detailReview').textContent = record.review;
 
@@ -804,6 +805,7 @@ function showDetail(record) {
 
 
 // --- Render Logic ---
+// --- Render Logic ---
 function renderRecords() {
     contentArea.innerHTML = ''; // Specific items only
 
@@ -814,16 +816,19 @@ function renderRecords() {
     }
 
     // 2. Pagination State
+    // Dynamic Items Per Page: 9 for Gallery (3x3), 10 for List
+    const dynamicItemsPerPage = currentView === 'gallery' ? 9 : 10;
+
     const totalItems = filteredRecords.length;
-    const totalPages = Math.ceil(totalItems / itemsPerPage) || 1;
+    const totalPages = Math.ceil(totalItems / dynamicItemsPerPage) || 1;
 
     // Safety check
     if (currentPage > totalPages) currentPage = totalPages;
     if (currentPage < 1) currentPage = 1;
 
     // 3. Slice
-    const startIndex = (currentPage - 1) * itemsPerPage;
-    const endIndex = startIndex + itemsPerPage;
+    const startIndex = (currentPage - 1) * dynamicItemsPerPage;
+    const endIndex = startIndex + dynamicItemsPerPage;
     const pageItems = filteredRecords.slice(startIndex, endIndex);
 
     // 4. Empty Check
@@ -839,6 +844,9 @@ function renderRecords() {
     // 5. Render Items
     pageItems.forEach(record => {
         let el;
+        // Helper to fix newlines
+        const formatText = (text) => text ? text.replace(/\\n/g, '<br>').replace(/\n/g, '<br>') : '';
+
         if (currentView === 'list') {
             el = document.createElement('div');
             el.className = 'list-item';
@@ -853,14 +861,25 @@ function renderRecords() {
                     <span class="item-venue">${record.venue ? ` | ${record.venue}` : ''}</span>
                     <span class="star-rating">★ ${record.rating}</span>
                 </div>
-                ${record.program ? `<div style="font-size:0.9rem; color:#555; margin-bottom:0.5rem;">🎵 ${record.program}</div>` : ''}
-                <div class="item-review">${record.review}</div>
+                ${record.program ? `<div class="item-program text-truncate" style="font-size:0.9rem; color:#555; margin-bottom:0.5rem;">🎵 ${formatText(record.program)}</div>` : ''}
+                <div class="item-review">${formatText(record.review)}</div>
             `;
 
             el.querySelector('.item-title').addEventListener('click', (e) => {
                 e.stopPropagation();
                 showDetail(record);
             });
+
+            // Allow clicking truncated text to expand (optional UX) or just open detail
+            const programDiv = el.querySelector('.item-program');
+            if (programDiv) {
+                programDiv.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    showDetail(record);
+                });
+                programDiv.style.cursor = "pointer";
+            }
+
         } else {
             // Gallery View
             el = document.createElement('div');

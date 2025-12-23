@@ -145,7 +145,7 @@ h1 {
     border-bottom: none;
 }
 
-.text-truncate {
+.item-program.text-truncate {
     display: block;
     white-space: nowrap;
     overflow: hidden;
