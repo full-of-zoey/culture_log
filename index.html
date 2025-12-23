@@ -42,6 +42,17 @@
                 </div>
             </div>
 
+            <div class="filter-bar"
+                style="overflow-x:auto; white-space:nowrap; padding-bottom:0.5rem; margin-bottom:1rem; -webkit-overflow-scrolling:touch;">
+                <button class="filter-chip active" data-category="all">ALL</button>
+                <button class="filter-chip" data-category="classic">Classic</button>
+                <button class="filter-chip" data-category="musical">Musical</button>
+                <button class="filter-chip" data-category="play">Play</button>
+                <button class="filter-chip" data-category="exhibition">Exhibition</button>
+                <button class="filter-chip" data-category="movie">Movie</button>
+                <button class="filter-chip" data-category="concert">Concert</button>
+            </div>
+
             <div class="view-controls">
                 <div class="toggle-group">
                     <button class="toggle-btn active" data-view="list">
@@ -57,8 +68,15 @@
         <!-- Main Content -->
         <main id="contentArea" class="view-list">
             <!-- Items will be injected here via JS -->
-            <div class="empty-state">
+            <div class="empty-state hidden" id="emptyState">
                 <p>아직 기록된 문화생활이 없습니다.</p>
+            </div>
+
+            <div id="paginationControls" class="pagination-controls hidden"
+                style="margin-top:2rem; display:flex; justify-content:center; gap:1rem; align-items:center;">
+                <button id="prevPageBtn" class="btn secondary small" disabled>Prev</button>
+                <span id="pageIndicator" style="font-size:0.9rem; color:var(--text-sub);">1 / 1</span>
+                <button id="nextPageBtn" class="btn secondary small" disabled>Next</button>
             </div>
         </main>
 
@@ -67,6 +85,11 @@
             <i class="ph ph-plus"></i>
         </button>
     </div>
+
+    <footer class="app-footer">
+        <p>© 2025 Full of Zoey. All moments recorded.</p>
+        <p>Built with <a href="https://github.com/full-of-zoey/culture_log" target="_blank">GitHub</a> & Firebase</p>
+    </footer>
 
     <!-- Modals -->
     <!-- 1. Login Modal -->
@@ -192,7 +215,7 @@
     </div>
 
 
-    <script type="module" src="app.js?v=secure"></script>
+    <script type="module" src="app.js?v=polish"></script>
 </body>
 
 </html>

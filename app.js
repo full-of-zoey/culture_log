@@ -53,11 +53,20 @@ const statYear = document.getElementById('statYear');
 
 // Toggle View
 const toggleBtns = document.querySelectorAll('.toggle-btn');
+const filterChips = document.querySelectorAll('.filter-chip'); // New
+const prevPageBtn = document.getElementById('prevPageBtn'); // New
+const nextPageBtn = document.getElementById('nextPageBtn'); // New
+const pageIndicator = document.getElementById('pageIndicator'); // New
+const paginationControls = document.getElementById('paginationControls'); // New (container)
+const emptyState = document.getElementById('emptyState');
 
 // --- State ---
 let user = null; // Current logged in user
 let records = []; // Synced from Firestore
 let currentView = 'list'; // list or gallery
+let currentCategory = 'all'; // New
+let currentPage = 1; // New
+const itemsPerPage = 10; // New
 const ADMIN_EMAIL = "honggiina@gmail.com";
 
 // --- Initialization ---
@@ -132,8 +141,37 @@ toggleBtns.forEach(btn => {
         toggleBtns.forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
         contentArea.className = `view-${view}`;
+        currentPage = 1; // Reset page on view change? Maybe optional.
         renderRecords();
     });
+});
+
+// --- Filter Logic ---
+filterChips.forEach(chip => {
+    chip.addEventListener('click', () => {
+        currentCategory = chip.dataset.category;
+
+        // Update UI
+        filterChips.forEach(c => c.classList.remove('active'));
+        chip.classList.add('active');
+
+        currentPage = 1; // Reset to page 1
+        renderRecords();
+    });
+});
+
+// --- Pagination Logic ---
+prevPageBtn.addEventListener('click', () => {
+    if (currentPage > 1) {
+        currentPage--;
+        renderRecords();
+    }
+});
+
+nextPageBtn.addEventListener('click', () => {
+    // Total pages calculation happens in renderRecords, but we can assume safe check here or UI disable
+    currentPage++;
+    renderRecords();
 });
 
 // --- CRUD Logic ---
@@ -289,14 +327,39 @@ headerDeleteBtn.addEventListener('click', async () => {
 
 // --- Render Logic ---
 function renderRecords() {
-    contentArea.innerHTML = '';
+    contentArea.innerHTML = ''; // Specific items only
 
-    if (records.length === 0) {
-        contentArea.innerHTML = '<div class="empty-state"><p>아직 기록이 없습니다.</p></div>';
-        return;
+    // 1. Filter
+    let filteredRecords = records;
+    if (currentCategory !== 'all') {
+        filteredRecords = records.filter(r => r.category === currentCategory);
     }
 
-    records.forEach(record => {
+    // 2. Pagination State
+    const totalItems = filteredRecords.length;
+    const totalPages = Math.ceil(totalItems / itemsPerPage) || 1;
+
+    // Safety check
+    if (currentPage > totalPages) currentPage = totalPages;
+    if (currentPage < 1) currentPage = 1;
+
+    // 3. Slice
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    const pageItems = filteredRecords.slice(startIndex, endIndex);
+
+    // 4. Empty Check
+    if (totalItems === 0) {
+        emptyState.classList.remove('hidden');
+        paginationControls.classList.add('hidden');
+        return;
+    } else {
+        emptyState.classList.add('hidden');
+        paginationControls.classList.remove('hidden');
+    }
+
+    // 5. Render Items
+    pageItems.forEach(record => {
         let el;
         if (currentView === 'list') {
             el = document.createElement('div');
@@ -337,6 +400,11 @@ function renderRecords() {
 
         contentArea.appendChild(el);
     });
+
+    // 6. Update Controls
+    pageIndicator.textContent = `${currentPage} / ${totalPages}`;
+    prevPageBtn.disabled = (currentPage === 1);
+    nextPageBtn.disabled = (currentPage === totalPages);
 }
 
 // --- Stats Logic ---

@@ -416,9 +416,14 @@ textarea:focus {
 
 /* Detail Modal Styles */
 .modal-content.large {
-    max-width: 700px;
+    max-width: 900px;
+    width: 90%;
+    /* Mobile Scroll Fix */
+    max-height: 90vh;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
     padding: 0;
-    overflow: hidden;
 }
 
 .modal-controls {
@@ -544,4 +549,42 @@ textarea:focus {
     color: var(--danger-color);
     margin-top: 1rem;
     padding: 0;
+}
+/* Footer */
+.app-footer {
+    text-align: center;
+    padding: 2rem;
+    margin-top: 4rem;
+    border-top: 1px solid rgba(0, 0, 0, 0.05);
+    color: var(--text-sub);
+    font-size: 0.9rem;
+}
+
+.app-footer a {
+    color: var(--text-main);
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.app-footer a:hover {
+    text-decoration: underline;
+}
+
+/* Filter Chips */
+.filter-chip {
+    background: var(--bg-card);
+    border: 1px solid rgba(0,0,0,0.1);
+    padding: 0.4rem 1rem;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    cursor: pointer;
+    margin-right: 0.5rem;
+    transition: all 0.2s;
+    color: var(--text-sub);
+}
+
+.filter-chip.active {
+    background: var(--text-main);
+    color: white;
+    border-color: var(--text-main);
 }
