@@ -525,13 +525,24 @@ prevPageBtn.addEventListener('click', () => {
     if (currentPage > 1) {
         currentPage--;
         renderRecords();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 });
 
 nextPageBtn.addEventListener('click', () => {
-    // Total pages calculation happens in renderRecords, but we can assume safe check here or UI disable
-    currentPage++;
-    renderRecords();
+    // Recalculate Total Pages for safety
+    let filtered = records;
+    if (currentCategory !== 'all') {
+        filtered = records.filter(r => r.category === currentCategory);
+    }
+    const dynamicItemsPerPage = currentView === 'gallery' ? 9 : 10;
+    const totalPages = Math.ceil(filtered.length / dynamicItemsPerPage) || 1;
+
+    if (currentPage < totalPages) {
+        currentPage++;
+        renderRecords();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
 });
 
 // --- Import Logic ---
@@ -830,19 +841,11 @@ function renderRecords() {
     const endIndex = startIndex + dynamicItemsPerPage;
     const pageItems = filteredRecords.slice(startIndex, endIndex);
 
-    // Debug Log
-    console.log(`Render Page ${currentPage}/${totalPages}:`, {
-        total: totalItems,
-        start: startIndex,
-        end: endIndex,
-        items: pageItems.length
-    });
-
     // 4. Empty Check
     if (totalItems === 0) {
         emptyState.classList.remove('hidden');
         paginationControls.classList.add('hidden');
-        return;
+        return; // Stop here if empty
     } else {
         emptyState.classList.add('hidden');
         paginationControls.classList.remove('hidden');
@@ -851,8 +854,11 @@ function renderRecords() {
     // 5. Render Items
     pageItems.forEach(record => {
         let el;
-        // Helper to fix newlines
-        const formatText = (text) => text ? text.replace(/\\n/g, '<br>').replace(/\n/g, '<br>') : '';
+        // Helper to fix newlines safely
+        const formatText = (text) => {
+            if (typeof text !== 'string') return '';
+            return text.replace(/\\n/g, '<br>').replace(/\n/g, '<br>');
+        };
 
         if (currentView === 'list') {
             const categoryEmoji = getCategoryEmoji(record.category);
@@ -904,10 +910,18 @@ function renderRecords() {
         contentArea.appendChild(el);
     });
 
-    // 6. Update Controls
-    pageIndicator.textContent = `${currentPage} / ${totalPages}`;
-    prevPageBtn.disabled = (currentPage === 1);
-    nextPageBtn.disabled = (currentPage === totalPages);
+    // 6. Update Controls Logic
+    updatePaginationControls(currentPage, totalPages);
+}
+
+function updatePaginationControls(current, total) {
+    const prevBtn = document.getElementById('prevPageBtn');
+    const nextBtn = document.getElementById('nextPageBtn');
+    const indicator = document.getElementById('pageIndicator');
+
+    if (prevBtn) prevBtn.disabled = (current <= 1);
+    if (nextBtn) nextBtn.disabled = (current >= total);
+    if (indicator) indicator.textContent = `${current} / ${total}`;
 }
 
 // --- Stats Logic ---
