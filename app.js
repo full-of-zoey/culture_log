@@ -65,7 +65,7 @@ let records = []; // Synced from Firestore
 let currentView = 'list'; // list or gallery
 let currentCategory = 'all'; // New
 let currentPage = 1; // New
-const itemsPerPage = 10; // New
+// itemsPerPage is dynamic now
 // --- Bulk Import Data ---
 const INITIAL_DATA = [
     {
@@ -805,9 +805,8 @@ function showDetail(record) {
 
 
 // --- Render Logic ---
-// --- Render Logic ---
 function renderRecords() {
-    contentArea.innerHTML = ''; // Specific items only
+    contentArea.innerHTML = '';
 
     // 1. Filter
     let filteredRecords = records;
@@ -830,6 +829,14 @@ function renderRecords() {
     const startIndex = (currentPage - 1) * dynamicItemsPerPage;
     const endIndex = startIndex + dynamicItemsPerPage;
     const pageItems = filteredRecords.slice(startIndex, endIndex);
+
+    // Debug Log
+    console.log(`Render Page ${currentPage}/${totalPages}:`, {
+        total: totalItems,
+        start: startIndex,
+        end: endIndex,
+        items: pageItems.length
+    });
 
     // 4. Empty Check
     if (totalItems === 0) {
@@ -861,7 +868,7 @@ function renderRecords() {
                     <span class="item-venue">${record.venue ? ` | ${record.venue}` : ''}</span>
                     <span class="star-rating">★ ${record.rating}</span>
                 </div>
-                ${record.program ? `<div class="item-program text-truncate" style="font-size:0.9rem; color:#555; margin-bottom:0.5rem;">🎵 ${formatText(record.program)}</div>` : ''}
+                ${record.program ? `<div class="item-program text-truncate" style="font-size:0.9rem; color:#555; margin-bottom:0.5rem; cursor:pointer;">🎵 ${formatText(record.program)}</div>` : ''}
                 <div class="item-review">${formatText(record.review)}</div>
             `;
 
@@ -870,14 +877,12 @@ function renderRecords() {
                 showDetail(record);
             });
 
-            // Allow clicking truncated text to expand (optional UX) or just open detail
             const programDiv = el.querySelector('.item-program');
             if (programDiv) {
                 programDiv.addEventListener('click', (e) => {
                     e.stopPropagation();
                     showDetail(record);
                 });
-                programDiv.style.cursor = "pointer";
             }
 
         } else {
