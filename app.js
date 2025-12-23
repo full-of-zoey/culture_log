@@ -855,6 +855,7 @@ function renderRecords() {
         const formatText = (text) => text ? text.replace(/\\n/g, '<br>').replace(/\n/g, '<br>') : '';
 
         if (currentView === 'list') {
+            const categoryEmoji = getCategoryEmoji(record.category);
             el = document.createElement('div');
             el.className = 'list-item';
             el.innerHTML = `
@@ -868,7 +869,7 @@ function renderRecords() {
                     <span class="item-venue">${record.venue ? ` | ${record.venue}` : ''}</span>
                     <span class="star-rating">★ ${record.rating}</span>
                 </div>
-                ${record.program ? `<div class="item-program text-truncate" style="font-size:0.9rem; color:#555; margin-bottom:0.5rem; cursor:pointer;">🎵 ${formatText(record.program)}</div>` : ''}
+                ${record.program ? `<div class="item-program text-truncate" style="font-size:0.9rem; color:#555; margin-bottom:0.5rem; cursor:pointer;">${categoryEmoji} ${formatText(record.program)}</div>` : ''}
                 <div class="item-review">${formatText(record.review)}</div>
             `;
 
@@ -957,6 +958,18 @@ function formatCategory(cat) {
         'concert': '콘서트'
     };
     return map[cat] || cat;
+}
+
+function getCategoryEmoji(cat) {
+    const map = {
+        'classic': '🎻',
+        'musical': '🎭',
+        'play': '🎬',
+        'exhibition': '🖼️',
+        'movie': '🍿',
+        'concert': '🎤'
+    };
+    return map[cat] || '🎵';
 }
 
 // Run
