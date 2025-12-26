@@ -615,11 +615,13 @@ imageInput.addEventListener('change', (e) => {
 
         // Simulation Prompt
         setTimeout(() => {
-            confirm("이미지를 분석하시겠습니까? (시뮬레이션: 정보를 자동으로 입력합니다)");
-            // Note: In a real app we would call a Cloud Function here.
-            // For now we keep the simulation text fill but allow real upload.
-            document.getElementById('inputTitle').value = "새로운 문화 기록";
-            document.getElementById('inputDate').value = new Date().toISOString().split('T')[0];
+            // Only run simulation if NOT editing
+            if (!isEditing) {
+                if (confirm("이미지를 분석하시겠습니까? (시뮬레이션: 정보를 자동으로 입력합니다)")) {
+                    document.getElementById('inputTitle').value = "새로운 문화 기록";
+                    document.getElementById('inputDate').value = new Date().toISOString().split('T')[0];
+                }
+            }
         }, 500);
     }
 });
