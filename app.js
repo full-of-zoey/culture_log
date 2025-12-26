@@ -840,6 +840,10 @@ function renderRecords() {
             const categoryEmoji = getCategoryEmoji(record.category);
             el = document.createElement('div');
             el.className = 'list-item';
+            const reviewLimit = 80; // Slightly more generous limit
+            const needsMore = record.review && record.review.length > reviewLimit;
+            const displayReview = needsMore ? record.review.substring(0, reviewLimit) : (record.review || "");
+
             el.innerHTML = `
                 <div class="item-header">
                     <span class="item-title pointer" style="cursor:pointer; text-decoration:underline; text-decoration-color:transparent; transition: text-decoration-color 0.3s; ">${record.title}</span>
@@ -852,13 +856,22 @@ function renderRecords() {
                     <span class="star-rating">★ ${record.rating}</span>
                 </div>
                 ${record.program ? `<div class="item-program text-truncate" style="font-size:0.9rem; color:#555; margin-bottom:0.5rem; cursor:pointer;">${categoryEmoji} ${formatText(record.program)}</div>` : ''}
-                <div class="item-review">${formatText(record.review)}</div>
+                <div class="item-review">
+                    ${displayReview}${needsMore ? `<span class="more-link">...더보기</span>` : ''}
+                </div>
             `;
 
             el.querySelector('.item-title').addEventListener('click', (e) => {
                 e.stopPropagation();
                 showDetail(record);
             });
+
+            if (needsMore) {
+                el.querySelector('.more-link').addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    showDetail(record);
+                });
+            }
 
             const programDiv = el.querySelector('.item-program');
             if (programDiv) {
@@ -977,7 +990,10 @@ function updateStats() {
 function formatDate(dateStr) {
     if (!dateStr) return '';
     const d = new Date(dateStr);
-    return `${d.getFullYear()}년 ${d.getMonth() + 1}월 ${d.getDate()}일`;
+    const year = String(d.getFullYear()).slice(-2);
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}.${month}.${day}`;
 }
 
 function formatCategory(cat) {
