@@ -39,8 +39,8 @@
                     <span class="stat-label">평균 평점</span>
                 </div>
                 <div class="stat-item">
-                    <span class="stat-value" id="statGenre">0</span>
-                    <span class="stat-label">장르</span>
+                    <span class="stat-value" id="statGenre">-</span>
+                    <span class="stat-label">가장 많이 본</span>
                 </div>
                 <div class="stat-item">
                     <span class="stat-value" id="statYear">0</span>
@@ -190,8 +190,13 @@
                     <img id="detailImage" src="" alt="Poster">
                 </div>
                 <div class="detail-info">
-                    <span id="detailCategory" class="badge">Category</span>
-                    <h2 id="detailTitle">Title</h2>
+                    <div class="detail-header-row">
+                        <span id="detailCategory" class="badge">Category</span>
+                        <div class="title-rating-row">
+                            <h2 id="detailTitle">Title</h2>
+                            <span id="detailRating" class="detail-rating-inline">★ 0.0</span>
+                        </div>
+                    </div>
                     <p id="detailDate" class="detail-date">2024.01.01</p>
 
                     <div class="info-row">
@@ -207,7 +212,6 @@
                         <span id="detailProgram">-</span>
                     </div>
 
-                    <div class="detail-rating" id="detailRating">★ 5.0</div>
 
                     <div class="detail-review-box">
                         <p id="detailReview">Review content...</p>

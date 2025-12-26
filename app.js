@@ -716,8 +716,13 @@ let currentDetailId = null;
 function showDetail(record) {
     currentDetailId = record.id;
     document.getElementById('detailImage').src = record.imageUrl;
-    document.getElementById('detailCategory').textContent = formatCategory(record.category);
+
+    // Category with Emoji
+    const categoryEmoji = getCategoryEmoji(record.category);
+    document.getElementById('detailCategory').textContent = `${categoryEmoji} ${formatCategory(record.category)}`;
+
     document.getElementById('detailTitle').textContent = record.title;
+    document.getElementById('detailRating').textContent = `★ ${record.rating.toFixed(1)}`;
     document.getElementById('detailDate').textContent = formatDate(record.date);
     document.getElementById('detailVenue').textContent = record.venue || '-';
     document.getElementById('detailCast').textContent = record.cast || '-';
@@ -942,13 +947,29 @@ function updateStats() {
     const totalRating = records.reduce((acc, cur) => acc + cur.rating, 0);
     statAvg.textContent = (totalRating / records.length).toFixed(1);
 
-    // 3. Genre Count
-    const uniqueGenres = new Set(records.map(r => r.category)).size;
-    statGenre.textContent = uniqueGenres;
+    // 3. Most Viewed Category (Mode)
+    const categoryCounts = records.reduce((acc, r) => {
+        acc[r.category] = (acc[r.category] || 0) + 1;
+        return acc;
+    }, {});
+
+    let mostViewedCategory = "-";
+    let maxCount = 0;
+
+    for (const cat in categoryCounts) {
+        if (categoryCounts[cat] > maxCount) {
+            maxCount = categoryCounts[cat];
+            mostViewedCategory = formatCategory(cat);
+        }
+    }
+    statGenre.textContent = mostViewedCategory;
 
     // 4. This Year
     const thisYear = new Date().getFullYear();
-    const countYear = records.filter(r => new Date(r.date).getFullYear() === thisYear).length;
+    const countYear = records.filter(r => {
+        const d = new Date(r.date);
+        return d.getFullYear() === thisYear;
+    }).length;
     statYear.textContent = countYear;
 }
 
