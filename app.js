@@ -717,7 +717,11 @@ let currentDetailId = null;
 
 function showDetail(record) {
     currentDetailId = record.id;
-    document.getElementById('detailImage').src = record.imageUrl;
+    const imgElement = document.getElementById('detailImage');
+    imgElement.src = record.imageUrl;
+    imgElement.style.objectFit = "cover"; // Enforce via JS
+    imgElement.style.width = "100%";
+    imgElement.style.height = "100%";
 
     // Category with Emoji
     const categoryEmoji = getCategoryEmoji(record.category);
