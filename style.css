@@ -203,7 +203,7 @@ h1 {
 }
 
 /* --- Main Content Gallery --- */
-.view-gallery {
+.view-gallery #contentArea {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     gap: 2px;
@@ -221,6 +221,7 @@ h1 {
     width: 100%;
     height: 100%;
     object-fit: cover;
+    display: block;
     transition: transform 0.3s;
 }
 
@@ -417,8 +418,8 @@ textarea:focus {
 .detail-poster img {
     width: 100%;
     height: 100%;
-    object-fit: contain;
-    /* or cover based on preference */
+    object-fit: cover;
+    display: block;
     backdrop-filter: blur(20px);
 }
 
@@ -534,7 +535,7 @@ textarea:focus {
 
 .btn.primary {
     background: var(--primary-color);
-    color: #000;
+    color: #ffffff !important;
 }
 
 .btn.secondary {
