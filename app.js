@@ -602,9 +602,60 @@ dropZone.addEventListener('click', () => {
     imageInput.click();
 });
 
-imageInput.addEventListener('change', (e) => {
+// Helper: Compress Image
+async function compressImage(file) {
+    return new Promise((resolve, reject) => {
+        const maxWidth = 1200;
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = (event) => {
+            const img = new Image();
+            img.src = event.target.result;
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                let width = img.width;
+                let height = img.height;
+
+                if (width > maxWidth) {
+                    height = Math.round((height * maxWidth) / width);
+                    width = maxWidth;
+                }
+
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, width, height);
+
+                canvas.toBlob((blob) => {
+                    const compressedFile = new File([blob], file.name, {
+                        type: 'image/jpeg',
+                        lastModified: Date.now(),
+                    });
+                    resolve(compressedFile);
+                }, 'image/jpeg', 0.7); // 70% Quality
+            };
+            img.onerror = (err) => reject(err);
+        };
+        reader.onerror = (err) => reject(err);
+    });
+}
+
+imageInput.addEventListener('change', async (e) => {
     if (e.target.files && e.target.files[0]) {
-        selectedFile = e.target.files[0];
+        let file = e.target.files[0];
+
+        // Compress if image (skip if SVG or GIF if desired, but general images are fine)
+        if (file.type.startsWith('image/')) {
+            try {
+                // Show loading state if needed, or just wait
+                file = await compressImage(file);
+                console.log(`Compressed: ${(file.size / 1024).toFixed(2)} KB`);
+            } catch (err) {
+                console.error("Compression failed, using original", err);
+            }
+        }
+
+        selectedFile = file;
 
         // Show Preview
         const reader = new FileReader();
