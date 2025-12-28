@@ -459,7 +459,14 @@ const ADMIN_EMAIL = "honggiina@gmail.com";
 let unsubscribe = null; // Store listener to detach later
 
 function init() {
-    // Auth Listener
+    // 1. Always start data fetch immediately (Public Access)
+    // Prevent double subscription if init is called multiple times (though mostly it's once)
+    if (!unsubscribe) {
+        renderSkeleton();
+        subscribeToData();
+    }
+
+    // 2. Auth Listener (For UI & Permissions only)
     auth.onAuthStateChanged((currentUser) => {
         user = currentUser;
         updateAuthUI();
@@ -469,24 +476,6 @@ function init() {
         if (!detailModal.classList.contains('hidden')) {
             if (isAdmin) headerDeleteBtn.classList.remove('hidden');
             else headerDeleteBtn.classList.add('hidden');
-        }
-
-        if (user) {
-            // 1. Logged In: Start Data Listener
-            // Prevent multiple listeners if auth state triggers multiple times
-            if (!unsubscribe) {
-                renderSkeleton();
-                subscribeToData();
-            }
-        } else {
-            // 2. Logged Out: Clean up
-            if (unsubscribe) {
-                unsubscribe();
-                unsubscribe = null;
-            }
-            records = [];
-            renderRecords(); // Shows empty state immediately
-            isLoading = false;
         }
     });
 }
@@ -509,10 +498,17 @@ function subscribeToData() {
             updateStats();
         }, (error) => {
             console.error("Data sync error:", error);
-            // If permission error happens despite auth, it might be a token propagation delay.
-            // But usually waiting for onAuthStateChanged fixes this.
             isLoading = false;
-            renderRecords();
+
+            // Explicitly show error in the UI
+            if (records.length === 0) {
+                const emptyState = document.getElementById('emptyState');
+                if (emptyState) {
+                    emptyState.innerHTML = `<p style="color:red;">⚠️ 데이터 로딩 실패<br><span style="font-size:0.8rem; color:#666;">(관리자에게 'Firestore 보안 규칙'을 확인해달라고 요청하세요)<br>오류내용: ${error.code}</span></p>`;
+                    emptyState.classList.remove('hidden');
+                }
+                renderRecords(); // To hide pagination/content
+            }
         });
 }
 
