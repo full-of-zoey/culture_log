@@ -943,16 +943,15 @@ function renderRecords() {
 
             el.innerHTML = `
                 <div class="item-header">
-                    <span class="item-title pointer" style="cursor:pointer; text-decoration:underline; text-decoration-color:transparent; transition: text-decoration-color 0.3s; ">${record.title}</span>
+                    <span class="item-title pointer">${record.title}</span>
                     <span class="item-date">${formatDate(record.date)}</span>
                 </div>
-                <div class="item-meta">
-                    <span class="item-category">${formatCategory(record.category)}</span>
-                    ${record.cast ? `<span class="item-cast">${record.cast}</span>` : ''}
-                    ${record.venue ? `<span class="item-venue">${record.venue}</span>` : ''}
-                    <span class="star-rating">★ ${record.rating}</span>
+                <div class="item-meta mobile-stack">
+                    ${record.cast ? `<div class="item-cast"><i class="ph-bold ph-users"></i> ${record.cast}</div>` : ''}
+                    ${record.venue ? `<div class="item-venue"><i class="ph-bold ph-map-pin"></i> ${record.venue}</div>` : ''}
+                    <div class="star-rating"><i class="ph-fill ph-star" style="color:#ffb703"></i> ${record.rating}</div>
                 </div>
-                ${record.program ? `<div class="item-program text-truncate" style="font-size:0.9rem; color:#555; margin-bottom:0.5rem; cursor:pointer;">${categoryEmoji} ${formatText(record.program)}</div>` : ''}
+                ${record.program ? `<div class="item-program text-truncate" style="font-size:0.9rem; color:var(--text-muted); margin-bottom:0.5rem; cursor:pointer;">${categoryEmoji} ${formatText(record.program)}</div>` : ''}
                 <div class="item-review">
                     ${displayReview}${needsMore ? `<span class="more-link">...더보기</span>` : ''}
                 </div>

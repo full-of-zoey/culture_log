@@ -73,6 +73,35 @@ header {
     margin-bottom: 0.5rem;
 }
 
+.item-meta {
+    display: flex;
+    gap: 1.2rem;
+    font-size: 0.85rem;
+    color: #888888;
+    /* Monochromatic text */
+    margin-bottom: 0.8rem;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.item-meta div {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.item-meta i {
+    font-size: 1.1rem;
+    opacity: 0.8;
+}
+
+.item-cast,
+.item-venue {
+    max-width: 200px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
 
 h1 {
     font-size: 1.5rem;
@@ -293,6 +322,59 @@ h1 {
     display: none;
 }
 
+/* Mobile Optimizations */
+@media (max-width: 600px) {
+    .app-container {
+        padding: 1.5rem 1rem;
+    }
+
+    h1 {
+        font-size: 1.8rem;
+    }
+
+    .stats-dashboard {
+        gap: 0.5rem;
+        padding: 1rem;
+    }
+
+    .stat-value {
+        font-size: 1.2rem;
+    }
+
+    .stat-label {
+        font-size: 0.7rem;
+    }
+
+    .item-meta.mobile-stack {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 0.6rem !important;
+    }
+
+    .item-meta.mobile-stack div {
+        width: auto;
+        max-width: 100%;
+        justify-content: flex-start;
+    }
+
+    .item-cast,
+    .item-venue {
+        max-width: 100%;
+    }
+
+    .list-item {
+        padding: 1.5rem 0;
+    }
+
+    .item-header {
+        margin-bottom: 0.5rem;
+    }
+
+    .item-title {
+        font-size: 1.1rem;
+    }
+}
+
 /* --- Modals --- */
 .modal {
     position: fixed;
@@ -499,14 +581,7 @@ textarea:focus {
 
 /* List View Review Truncation - Handled above */
 
-/* List View Spacing */
-.item-meta {
-    font-size: 0.85rem;
-    color: var(--text-sub);
-    margin-bottom: 0.6rem;
-    display: flex;
-    gap: 1.5rem;
-}
+
 
 /* Separator Style */
 .sep {
