@@ -54,8 +54,12 @@ const pageIndicator = document.getElementById('pageIndicator'); // New
 const paginationControls = document.getElementById('paginationControls'); // New (container)
 const emptyState = document.getElementById('emptyState');
 
+// const emptyState = document.getElementById('emptyState'); // Removed duplicate
+let isLoading = true; // Optimization: Prevent flash
+
 // Skeleton Loading
 function renderSkeleton() {
+    isLoading = true; // Set loading state
     contentArea.innerHTML = '';
     const skeletonCount = 5;
     for (let i = 0; i < skeletonCount; i++) {
@@ -460,12 +464,17 @@ function init() {
     });
 
     // Data Listener (Realtime!)
-    db.collection("records").orderBy("date", "desc")
+    // Optimization: Limit to 50 items initially
+    db.collection("records").orderBy("date", "desc").limit(50)
         .onSnapshot((snapshot) => {
             records = snapshot.docs.map(doc => ({
                 id: doc.id,
                 ...doc.data()
             }));
+
+            // Optimization: Data is ready, disable loading state
+            isLoading = false;
+
             renderRecords();
             updateStats();
         });
@@ -896,6 +905,12 @@ function renderRecords() {
     const pageItems = filteredRecords.slice(startIndex, endIndex);
 
     // 4. Empty Check & Controls Visibility
+    // Optimization: Prevent Empty Flash
+    if (isLoading) {
+        // Do nothing (keep skeleton) or return
+        return;
+    }
+
     if (totalItems === 0) {
         if (emptyState) emptyState.classList.remove('hidden');
         if (paginationControls) paginationControls.classList.add('hidden');
