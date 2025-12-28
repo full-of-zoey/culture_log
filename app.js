@@ -949,7 +949,6 @@ function renderRecords() {
                 <div class="item-meta mobile-stack">
                     ${record.cast ? `<div class="item-cast"><i class="ph-bold ph-users"></i> ${record.cast}</div>` : ''}
                     ${record.venue ? `<div class="item-venue"><i class="ph-bold ph-map-pin"></i> ${record.venue}</div>` : ''}
-                    <div class="star-rating"><i class="ph-fill ph-star" style="color:#ffb703"></i> ${record.rating}</div>
                 </div>
                 ${record.program ? `<div class="item-program text-truncate" style="font-size:0.9rem; color:var(--text-muted); margin-bottom:0.5rem; cursor:pointer;">${categoryEmoji} ${formatText(record.program)}</div>` : ''}
                 <div class="item-review">
