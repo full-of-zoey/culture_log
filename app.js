@@ -13,6 +13,16 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
+
+// Performance: Enable Offline Persistence
+db.enablePersistence({ synchronizeTabs: true })
+    .catch((err) => {
+        if (err.code == 'failed-precondition') {
+            console.warn("Multiple tabs open, persistence disabled.");
+        } else if (err.code == 'unimplemented') {
+            console.warn("Browser doesn't support persistence.");
+        }
+    });
 const storage = firebase.storage();
 const provider = new firebase.auth.GoogleAuthProvider();
 
@@ -445,38 +455,64 @@ const ADMIN_EMAIL = "honggiina@gmail.com";
 
 
 // --- Initialization ---
+// --- Initialization ---
+let unsubscribe = null; // Store listener to detach later
+
 function init() {
     // Auth Listener
     auth.onAuthStateChanged((currentUser) => {
         user = currentUser;
-        // Initial Load
-        // currentUser = { uid: 'admin' }; // Simulate admin for now or wait for auth
-        // user = currentUser;
-        renderSkeleton(); // Show Skeleton immediately
-        // fetchRecords(); // Then fetch
         updateAuthUI();
-        // Reload detail view permissions if open
+
+        // Admin Button Logic
         const isAdmin = user && user.email === ADMIN_EMAIL;
         if (!detailModal.classList.contains('hidden')) {
             if (isAdmin) headerDeleteBtn.classList.remove('hidden');
             else headerDeleteBtn.classList.add('hidden');
         }
-    });
 
-    // Data Listener (Realtime!)
+        if (user) {
+            // 1. Logged In: Start Data Listener
+            // Prevent multiple listeners if auth state triggers multiple times
+            if (!unsubscribe) {
+                renderSkeleton();
+                subscribeToData();
+            }
+        } else {
+            // 2. Logged Out: Clean up
+            if (unsubscribe) {
+                unsubscribe();
+                unsubscribe = null;
+            }
+            records = [];
+            renderRecords(); // Shows empty state immediately
+            isLoading = false;
+        }
+    });
+}
+
+function subscribeToData() {
+    isLoading = true; // Start loading state
+
     // Optimization: Limit to 50 items initially
-    db.collection("records").orderBy("date", "desc").limit(50)
+    unsubscribe = db.collection("records").orderBy("date", "desc").limit(50)
         .onSnapshot((snapshot) => {
             records = snapshot.docs.map(doc => ({
                 id: doc.id,
                 ...doc.data()
             }));
 
-            // Optimization: Data is ready, disable loading state
+            // Optimization: Minimal artificial delay removed, relying on skeleton
+            // Data is ready, disable loading state
             isLoading = false;
-
             renderRecords();
             updateStats();
+        }, (error) => {
+            console.error("Data sync error:", error);
+            // If permission error happens despite auth, it might be a token propagation delay.
+            // But usually waiting for onAuthStateChanged fixes this.
+            isLoading = false;
+            renderRecords();
         });
 }
 
