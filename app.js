@@ -54,6 +54,26 @@ const pageIndicator = document.getElementById('pageIndicator'); // New
 const paginationControls = document.getElementById('paginationControls'); // New (container)
 const emptyState = document.getElementById('emptyState');
 
+// Skeleton Loading
+function renderSkeleton() {
+    contentArea.innerHTML = '';
+    const skeletonCount = 5;
+    for (let i = 0; i < skeletonCount; i++) {
+        const el = document.createElement('div');
+        el.className = 'skeleton-list-item';
+        el.innerHTML = `
+            <div class="skeleton-header">
+                <div class="skeleton skeleton-title"></div>
+                <div class="skeleton skeleton-date"></div>
+            </div>
+            <div class="skeleton skeleton-meta"></div>
+            <div class="skeleton skeleton-text"></div>
+            <div class="skeleton skeleton-text" style="width: 80%;"></div>
+        `;
+        contentArea.appendChild(el);
+    }
+}
+
 // --- State ---
 let user = null; // Current logged in user
 let records = []; // Synced from Firestore
@@ -425,6 +445,11 @@ function init() {
     // Auth Listener
     auth.onAuthStateChanged((currentUser) => {
         user = currentUser;
+        // Initial Load
+        // currentUser = { uid: 'admin' }; // Simulate admin for now or wait for auth
+        // user = currentUser;
+        renderSkeleton(); // Show Skeleton immediately
+        // fetchRecords(); // Then fetch
         updateAuthUI();
         // Reload detail view permissions if open
         const isAdmin = user && user.email === ADMIN_EMAIL;
