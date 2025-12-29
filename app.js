@@ -72,7 +72,10 @@ function renderSkeleton() {
     isLoading = true; // Set loading state
 
     // CRITICAL: Hide emptyState while showing skeleton
-    if (emptyState) emptyState.classList.add('hidden');
+    if (emptyState) {
+        emptyState.classList.add('hidden');
+        emptyState.classList.remove('show');
+    }
     if (paginationControls) paginationControls.classList.add('hidden');
 
     contentArea.innerHTML = '';
@@ -99,7 +102,41 @@ let records = []; // Synced from Firestore
 let currentView = 'list'; // list or gallery
 let currentCategory = 'all'; // New
 let currentPage = 1; // New
-// itemsPerPage is dynamic now
+
+// --- Cache Configuration ---
+const CACHE_KEY = 'culture_log_cache';
+const CACHE_VERSION = 'v2';
+
+// Load cached data from localStorage
+function loadFromCache() {
+    try {
+        const cached = localStorage.getItem(CACHE_KEY);
+        if (cached) {
+            const data = JSON.parse(cached);
+            if (data.version === CACHE_VERSION && Array.isArray(data.records)) {
+                console.log(`[Cache] Loaded ${data.records.length} records from cache`);
+                return data.records;
+            }
+        }
+    } catch (e) {
+        console.warn('[Cache] Failed to load:', e);
+    }
+    return null;
+}
+
+// Save data to localStorage cache
+function saveToCache(data) {
+    try {
+        localStorage.setItem(CACHE_KEY, JSON.stringify({
+            version: CACHE_VERSION,
+            records: data,
+            timestamp: Date.now()
+        }));
+        console.log(`[Cache] Saved ${data.length} records to cache`);
+    } catch (e) {
+        console.warn('[Cache] Failed to save:', e);
+    }
+}
 // --- Bulk Import Data ---
 const INITIAL_DATA = [
     {
@@ -463,17 +500,45 @@ const ADMIN_EMAIL = "honggiina@gmail.com";
 let unsubscribe = null; // Store listener to detach later
 
 function init() {
-    // 0. Hide emptyState immediately on init
-    if (emptyState) emptyState.classList.add('hidden');
+    console.log('[Init] Starting app...');
 
-    // 1. Always start data fetch immediately (Public Access)
-    // Prevent double subscription if init is called multiple times (though mostly it's once)
-    if (!unsubscribe) {
+    // 0. Ensure emptyState is hidden
+    if (emptyState) {
+        emptyState.classList.add('hidden');
+        emptyState.classList.remove('show');
+    }
+
+    // 1. INSTANT RENDER: Try cache first, then fallback to INITIAL_DATA
+    const cachedRecords = loadFromCache();
+
+    if (cachedRecords && cachedRecords.length > 0) {
+        // Use cached data for instant display
+        console.log('[Init] Using cached data for instant render');
+        records = cachedRecords;
+        isLoading = false;
+        renderRecords();
+        updateStats();
+    } else if (INITIAL_DATA && INITIAL_DATA.length > 0) {
+        // Fallback to INITIAL_DATA for first-time visitors
+        console.log('[Init] Using INITIAL_DATA for instant render');
+        records = INITIAL_DATA.map((item, index) => ({
+            ...item,
+            id: `initial_${index}` // Temporary ID
+        }));
+        isLoading = false;
+        renderRecords();
+        updateStats();
+    } else {
+        // No cache, no initial data - show skeleton
         renderSkeleton();
+    }
+
+    // 2. BACKGROUND SYNC: Start Firebase sync (will update data silently)
+    if (!unsubscribe) {
         subscribeToData();
     }
 
-    // 2. Auth Listener (For UI & Permissions only)
+    // 3. Auth Listener (For UI & Permissions only)
     auth.onAuthStateChanged((currentUser) => {
         user = currentUser;
         updateAuthUI();
@@ -488,44 +553,51 @@ function init() {
 }
 
 function subscribeToData() {
-    isLoading = true; // Start loading state
+    console.log('[Firebase] Starting background sync...');
 
-    // Hide emptyState while loading
-    if (emptyState) emptyState.classList.add('hidden');
+    // Don't show loading state if we already have data rendered
+    const hadPreviousData = records.length > 0;
 
     // Optimization: Limit to 50 items initially
     unsubscribe = db.collection("records").orderBy("date", "desc").limit(50)
         .onSnapshot((snapshot) => {
-            records = snapshot.docs.map(doc => ({
+            const newRecords = snapshot.docs.map(doc => ({
                 id: doc.id,
                 ...doc.data()
             }));
 
-            // Data is ready, disable loading state
+            console.log(`[Firebase] Received ${newRecords.length} records`);
+
+            // Update records
+            records = newRecords;
             isLoading = false;
 
-            // Clear skeleton and render actual content
-            contentArea.innerHTML = '';
+            // Save to cache for next visit
+            saveToCache(records);
+
+            // Re-render with fresh data
             renderRecords();
             updateStats();
+
         }, (error) => {
-            console.error("Data sync error:", error);
+            console.error("[Firebase] Data sync error:", error);
             isLoading = false;
 
-            // Clear skeleton
-            contentArea.innerHTML = '';
-
-            // Show error message in content area instead of emptyState
-            if (records.length === 0) {
-                contentArea.innerHTML = `
-                    <div style="text-align:center; padding:3rem 1rem; color:#666;">
-                        <p style="font-size:1.1rem; margin-bottom:0.5rem;">⚠️ 데이터를 불러오는 중 문제가 발생했습니다</p>
-                        <p style="font-size:0.85rem; color:#999;">잠시 후 다시 시도해주세요</p>
-                        <button onclick="location.reload()" style="margin-top:1rem; padding:0.5rem 1rem; border:1px solid #ddd; border-radius:4px; background:#fff; cursor:pointer;">새로고침</button>
-                    </div>
-                `;
-                if (paginationControls) paginationControls.classList.add('hidden');
+            // If we already have data (from cache/INITIAL_DATA), keep showing it
+            if (records.length > 0) {
+                console.log('[Firebase] Error occurred but using cached/initial data');
+                return; // Don't show error, keep current data
             }
+
+            // Only show error if we have no data at all
+            contentArea.innerHTML = `
+                <div style="text-align:center; padding:3rem 1rem; color:#666;">
+                    <p style="font-size:1.1rem; margin-bottom:0.5rem;">데이터를 불러오는 중 문제가 발생했습니다</p>
+                    <p style="font-size:0.85rem; color:#999;">잠시 후 다시 시도해주세요</p>
+                    <button onclick="location.reload()" style="margin-top:1rem; padding:0.5rem 1rem; border:1px solid #ddd; border-radius:4px; background:#fff; cursor:pointer;">새로고침</button>
+                </div>
+            `;
+            if (paginationControls) paginationControls.classList.add('hidden');
         });
 }
 
@@ -979,21 +1051,30 @@ function renderRecords() {
     const pageItems = filteredRecords.slice(startIndex, endIndex);
 
     // 4. Empty Check & Controls Visibility
-    // Optimization: Prevent Empty Flash - ALWAYS hide emptyState during loading
+    // Use .show class for emptyState (CSS hides by default)
     if (isLoading) {
         // Keep skeleton and hide emptyState during loading
-        if (emptyState) emptyState.classList.add('hidden');
+        if (emptyState) {
+            emptyState.classList.add('hidden');
+            emptyState.classList.remove('show');
+        }
         if (paginationControls) paginationControls.classList.add('hidden');
         return;
     }
 
     if (totalItems === 0) {
         // Only show empty state AFTER loading is complete AND records is truly empty
-        if (emptyState) emptyState.classList.remove('hidden');
+        if (emptyState) {
+            emptyState.classList.remove('hidden');
+            emptyState.classList.add('show');
+        }
         if (paginationControls) paginationControls.classList.add('hidden');
         return;
     } else {
-        if (emptyState) emptyState.classList.add('hidden');
+        if (emptyState) {
+            emptyState.classList.add('hidden');
+            emptyState.classList.remove('show');
+        }
         // ALWAYS show controls if data exists
         if (paginationControls) {
             paginationControls.classList.remove('hidden');
