@@ -782,21 +782,20 @@ function subscribeToData() {
 
             console.log(`[Firebase] Received ${newRecords.length} records`);
 
-            // Only update if we got data, OR if user is admin (admin can have 0 records)
-            const isAdmin = user && user.email === ADMIN_EMAIL;
+            // Only update if we got data from Firebase
             if (newRecords.length > 0) {
                 records = newRecords;
                 saveToCache(records);
                 renderRecords();
                 updateStats();
-            } else if (isAdmin) {
-                // Admin with empty database - show actual empty state
-                records = newRecords;
+            } else if (records.length > 0) {
+                // Firebase returned empty but we have existing data - keep it
+                console.log('[Firebase] Empty result but keeping existing data');
+            } else {
+                // No data anywhere - show empty state
+                console.log('[Firebase] No data available');
                 renderRecords();
                 updateStats();
-            } else {
-                // Anonymous user with 0 Firebase results - keep INITIAL_DATA
-                console.log('[Firebase] Empty result for anonymous user, keeping initial data');
             }
             isLoading = false;
 
