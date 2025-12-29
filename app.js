@@ -749,6 +749,20 @@ function init() {
             if (isAdmin) headerDeleteBtn.classList.remove('hidden');
             else headerDeleteBtn.classList.add('hidden');
         }
+
+        // Admin-only: Add backup link to footer
+        const footer = document.querySelector('footer');
+        const existingBackupLink = document.getElementById('backupLink');
+        if (isAdmin && footer && !existingBackupLink) {
+            const backupLink = document.createElement('a');
+            backupLink.id = 'backupLink';
+            backupLink.innerText = "💾 데이터 백업 (Excel)";
+            backupLink.style.cssText = "display:block; margin-top:10px; color:#888; font-size:0.8rem; cursor:pointer; text-decoration:underline;";
+            backupLink.onclick = window.exportToCSV;
+            footer.appendChild(backupLink);
+        } else if (!isAdmin && existingBackupLink) {
+            existingBackupLink.remove();
+        }
     });
 }
 
@@ -768,16 +782,23 @@ function subscribeToData() {
 
             console.log(`[Firebase] Received ${newRecords.length} records`);
 
-            // Update records
-            records = newRecords;
+            // Only update if we got data, OR if user is admin (admin can have 0 records)
+            const isAdmin = user && user.email === ADMIN_EMAIL;
+            if (newRecords.length > 0) {
+                records = newRecords;
+                saveToCache(records);
+                renderRecords();
+                updateStats();
+            } else if (isAdmin) {
+                // Admin with empty database - show actual empty state
+                records = newRecords;
+                renderRecords();
+                updateStats();
+            } else {
+                // Anonymous user with 0 Firebase results - keep INITIAL_DATA
+                console.log('[Firebase] Empty result for anonymous user, keeping initial data');
+            }
             isLoading = false;
-
-            // Save to cache for next visit
-            saveToCache(records);
-
-            // Re-render with fresh data
-            renderRecords();
-            updateStats();
 
         }, (error) => {
             console.error("[Firebase] Data sync error:", error);
@@ -921,16 +942,7 @@ window.exportToCSV = function () {
     document.body.removeChild(link);
 }
 
-// Bind to a UI element (we'll add a footer link dynamically or expect HTML update)
-// For now, let's add a dynamic button in the Footer if not exists
-const footer = document.querySelector('footer');
-if (footer) {
-    const backupLink = document.createElement('a');
-    backupLink.innerText = "💾 데이터 백업 (Excel)";
-    backupLink.style.cssText = "display:block; margin-top:10px; color:#888; font-size:0.8rem; cursor:pointer; text-decoration:underline;";
-    backupLink.onclick = window.exportToCSV;
-    footer.appendChild(backupLink);
-}
+// Backup link is only shown for admin users (added in auth state listener)
 
 // --- CRUD Logic ---
 addBtn.addEventListener('click', () => {
