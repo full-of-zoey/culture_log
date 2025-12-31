@@ -138,11 +138,53 @@ function saveToCache(data) {
     }
 }
 // --- Data Configuration ---
-// INITIAL_DATA removed - now using cache-based system
-// First visitors: Show skeleton → Firebase load → Cache save
-// Return visitors: Cache load (instant) → Firebase sync (background)
-const INITIAL_DATA = [];
 const ADMIN_EMAIL = "honggiina@gmail.com";
+
+// REST API Fallback for in-app browsers (Instagram, etc.) where Firebase SDK may fail
+async function fetchDataFromREST() {
+    console.log('[REST] Attempting REST API fallback...');
+    try {
+        const projectId = firebaseConfig.projectId;
+        const url = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/records?pageSize=100`;
+
+        const response = await fetch(url);
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+        const data = await response.json();
+        if (!data.documents || data.documents.length === 0) {
+            console.log('[REST] No documents found');
+            return [];
+        }
+
+        // Parse Firestore REST format to our format
+        const records = data.documents.map(doc => {
+            const fields = doc.fields;
+            const id = doc.name.split('/').pop();
+
+            return {
+                id: id,
+                title: fields.title?.stringValue || '',
+                date: fields.date?.stringValue || '',
+                category: fields.category?.stringValue || '',
+                rating: parseFloat(fields.rating?.doubleValue || fields.rating?.integerValue || 0),
+                venue: fields.venue?.stringValue || '',
+                cast: fields.cast?.stringValue || '',
+                program: fields.program?.stringValue || '',
+                review: fields.review?.stringValue || '',
+                imageUrl: fields.imageUrl?.stringValue || ''
+            };
+        });
+
+        // Sort by date descending
+        records.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+
+        console.log(`[REST] Successfully fetched ${records.length} records`);
+        return records;
+    } catch (error) {
+        console.error('[REST] Fallback failed:', error);
+        return null;
+    }
+}
 
 
 // --- Initialization ---
@@ -172,19 +214,36 @@ function init() {
         console.log('[Init] No cache - showing skeleton');
         renderSkeleton();
 
-        // Timeout for first-time visitors: Show helpful message if loading takes too long
-        setTimeout(() => {
+        // Fallback timer: If Firebase SDK doesn't respond in 5s, try REST API
+        setTimeout(async () => {
             if (isLoading && records.length === 0) {
-                console.log('[Init] Loading timeout - showing retry message');
-                contentArea.innerHTML = `
-                    <div style="text-align:center; padding:3rem 1rem; color:#666;">
-                        <p style="font-size:1.1rem; margin-bottom:0.5rem;">데이터를 불러오는 중입니다...</p>
-                        <p style="font-size:0.85rem; color:#999;">네트워크 상태를 확인해주세요</p>
-                        <button onclick="location.reload()" style="margin-top:1rem; padding:0.5rem 1rem; border:1px solid #ddd; border-radius:4px; background:#fff; cursor:pointer;">새로고침</button>
-                    </div>
-                `;
+                console.log('[Init] Firebase SDK timeout - trying REST API fallback');
+
+                const restRecords = await fetchDataFromREST();
+                if (restRecords && restRecords.length > 0) {
+                    records = restRecords;
+                    saveToCache(records);
+                    isLoading = false;
+                    renderRecords();
+                    updateStats();
+                    console.log('[Init] REST API fallback successful!');
+                } else if (isLoading && records.length === 0) {
+                    // REST also failed - show error after additional wait
+                    setTimeout(() => {
+                        if (isLoading && records.length === 0) {
+                            console.log('[Init] All methods failed - showing error');
+                            contentArea.innerHTML = `
+                                <div style="text-align:center; padding:3rem 1rem; color:#666;">
+                                    <p style="font-size:1.1rem; margin-bottom:0.5rem;">데이터를 불러오지 못했습니다</p>
+                                    <p style="font-size:0.85rem; color:#999;">네트워크 연결을 확인해주세요</p>
+                                    <button onclick="location.reload()" style="margin-top:1rem; padding:0.5rem 1rem; border:1px solid #ddd; border-radius:4px; background:#fff; cursor:pointer;">새로고침</button>
+                                </div>
+                            `;
+                        }
+                    }, 3000);
+                }
             }
-        }, 10000); // 10 seconds timeout
+        }, 5000); // 5 seconds before REST fallback
     }
 
     // 2. BACKGROUND SYNC: Start Firebase sync (will update data silently)
