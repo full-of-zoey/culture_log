@@ -240,18 +240,20 @@ function subscribeToData() {
             if (newRecords.length > 0) {
                 records = newRecords;
                 saveToCache(records);
+                isLoading = false;  // Set BEFORE render
                 renderRecords();
                 updateStats();
             } else if (records.length > 0) {
                 // Firebase returned empty but we have existing data - keep it
                 console.log('[Firebase] Empty result but keeping existing data');
+                isLoading = false;
             } else {
                 // No data anywhere - show empty state
                 console.log('[Firebase] No data available');
+                isLoading = false;  // Set BEFORE render
                 renderRecords();
                 updateStats();
             }
-            isLoading = false;
 
         }, (error) => {
             console.error("[Firebase] Data sync error:", error);
