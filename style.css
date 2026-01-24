@@ -598,7 +598,11 @@ textarea:focus {
     border-radius: 8px;
     margin-top: 1.5rem;
     line-height: 1.6;
+}
+
+#detailReview {
     white-space: pre-line;
+    margin: 0;
 }
 
 
