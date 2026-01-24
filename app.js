@@ -285,8 +285,8 @@ function subscribeToData() {
     // Don't show loading state if we already have data rendered
     const hadPreviousData = records.length > 0;
 
-    // Optimization: Limit to 50 items initially
-    unsubscribe = db.collection("records").orderBy("date", "desc").limit(50)
+    // Load all records
+    unsubscribe = db.collection("records").orderBy("date", "desc")
         .onSnapshot((snapshot) => {
             const newRecords = snapshot.docs.map(doc => ({
                 id: doc.id,
